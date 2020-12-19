@@ -17,24 +17,29 @@ spec:
     spec:
       containers:
       - name: photoprism
-        image: photoprism/photoprism:20190522
+        image: photoprism/photoprism:20201219
         env:
+        # Explanation of some vars: https://dl.photoprism.org/docker/docker-compose.yml
         - name: PHOTOPRISM_DEBUG
           value: "true"
-        - name: PHOTOPRISM_CACHE_PATH
-          value: /assets/cache
-        - name: PHOTOPRISM_IMPORT_PATH
-          value: /assets/photos/import
-        - name: PHOTOPRISM_EXPORT_PATH
-          value: /assets/photos/export
-        - name: PHOTOPRISM_ORIGINALS_PATH
-          vale: /assets/photos/originals
+        - name: PHOTOPRISM_READONLY
+          value: "true"
+        - name: PHOTOPRISM_DISABLE_WEBDAV
+          value: "true"
+        #- name: PHOTOPRISM_CACHE_PATH
+        #  value: /assets/cache
+        #- name: PHOTOPRISM_IMPORT_PATH
+        #  value: /assets/photos/import
+        #- name: PHOTOPRISM_EXPORT_PATH
+        #  value: /assets/photos/export
+        #- name: PHOTOPRISM_ORIGINALS_PATH
+        #  vale: /photoprism/originals
         - name: PHOTOPRISM_DATABASE_DRIVER
-          value: mysql
+          value: sqlite  # mysql
         - name: PHOTOPRISM_HTTP_HOST
           value: 0.0.0.0
         - name: PHOTOPRISM_HTTP_PORT
-          value: 2342
+          value: "2342"
         # Load database DSN & admin password from secret
         envFrom:
         - secretRef:
@@ -44,29 +49,20 @@ spec:
         - containerPort: 2342
           name: http
         volumeMounts:
-        - mountPath: /assets/photos/originals
+        - mountPath: /photoprism/originals
           name: originals
-          subPath: media/photos
-        - mountPath: /asssets/cache
-          name: photoprism
-          subPath: cache
-        - mountPath: /assets/photos/import
-          name: photoprism
-          subPath: import
-        - mountPath: /assets/photos/export
-          name: photoprism
-          subPath: export
+        #- mountPath: /asssets/cache
+        #  name: photoprism
+        #  subPath: cache
         readinessProbe:
           httpGet:
             path: /api/v1/status
             port: http
+      nodeSelector:
+        kubernetes.io/arch: "amd64"
       volumes:
       - name: originals
         nfs:
-          path: /share
+          path: /srv/storage/kubernetes/nextcloud/data/__groupfolders/1
           readOnly: true
-          server: my.nas.host
-      - name: photoprism
-        nfs:
-          path: /photoprism
-          server: my.nas.host
+          server: 192.168.2.40
